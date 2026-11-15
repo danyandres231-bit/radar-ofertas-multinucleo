@@ -1,0 +1,95 @@
+<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=Sora:wght@300;500;700;800&display=swap" rel="stylesheet"><link rel="stylesheet" href="/assets/app.css"><link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 32 32%22%3E%3Ccircle cx=%2216%22 cy=%2216%22 r=%2210%22 fill=%22none%22 stroke=%22%235ce1e6%22 stroke-width=%223%22/%3E%3Ccircle cx=%2216%22 cy=%2216%22 r=%223%22 fill=%22%238b7cf6%22/%3E%3C/svg%3E"><title>Métricas del pipeline</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script></head><body>
+<div class="aurora" aria-hidden="true"></div>
+<header class="barra"><div class="envoltura">
+  <a class="marca" href="/"><span class="punto"></span><span class="txt">Radar de Ofertas</span></a>
+  <nav class="menu"><a href="/">Ofertas</a><a href="/metricas.html" aria-current="page">Métricas</a></nav>
+  <button class="tema" type="button" aria-label="Cambiar tema claro u oscuro">◐</button>
+</div></header>
+<main class="envoltura">
+  <section class="heroe"><h1 id="titulo">Cómo se comporta el <span class="acento">pipeline</span></h1>
+    <p>Tiempos por etapa, solicitudes por sitio, emparejamientos dudosos y las curvas de speedup medidas en modo replay sobre una máquina multinúcleo.</p></section>
+  <section class="col3 seccion" id="resumen"></section>
+  <section class="col2 seccion">
+    <div class="panel"><h2>Tiempo por etapa (última ejecución)</h2><div class="lienzo"><canvas id="etapas"></canvas></div></div>
+    <div class="panel"><h2>Solicitudes por sitio</h2><div class="tabla-scroll" id="sitios"></div></div>
+  </section>
+  <section class="panel seccion" id="ficha"></section>
+  <section class="col2 seccion">
+    <div class="panel"><h2>Speedup de la descarga (E/S)</h2><div class="lienzo"><canvas id="spDesc"></canvas></div><p class="sub" id="notaDesc"></p></div>
+    <div class="panel"><h2>Speedup del emparejamiento (CPU)</h2><div class="lienzo"><canvas id="spEmp"></canvas></div><p class="sub" id="notaEmp"></p></div>
+  </section>
+  <section class="col2 seccion">
+    <div class="panel"><h2>Pipeline completo: tres modos</h2><div class="lienzo"><canvas id="modos"></canvas></div><p class="sub" id="notaModos"></p></div>
+    <div class="panel"><h2>Experimento de contención</h2><div class="tabla-scroll" id="contencion"></div><div id="carrera"></div></div>
+  </section>
+  <section class="panel seccion"><h2>Tablas de resultados (Anexo 2)</h2><div id="tablas"></div></section>
+  <section class="panel seccion"><h2>Juegos sin emparejar o con una sola tienda</h2><div class="tabla-scroll" id="noPub"></div></section>
+  <section class="panel seccion"><h2>Emparejamientos dudosos</h2><p class="sub">Similitud cerca del umbral, números de secuela distintos, ediciones, DLC o bundles. No se usan para comparar precios hasta revisarlos.</p><div class="tabla-scroll" id="dudosos"></div></section>
+  <section class="panel seccion"><h2>Fallos de la última ejecución</h2><div class="tabla-scroll" id="fallos"></div></section>
+</main>
+<footer><div class="envoltura">Proyecto académico IC-3101 Arquitectura de Computadoras · TEC San Carlos · II Semestre 2026. Precios en USD tomados de Steam, GOG, Nintendo eShop y GameStop; los enlaces llevan a cada tienda. Sin afiliación con ninguna tienda.</div></footer>
+<script type="module">
+import { $, fecha, esc, json, armar, tema } from '/assets/app.js';
+tema(); armar($('#titulo'));
+const css = getComputedStyle(document.documentElement), C = n => css.getPropertyValue(n).trim();
+Chart.defaults.color = C('--niebla'); Chart.defaults.borderColor = C('--borde'); Chart.defaults.font.family = 'IBM Plex Sans';
+const NOM = { '0_descubrir': '0 · Descubrir', '0_normalizar_candidatos': '0 · Normalizar candidatos', '1_descargar': '1 · Descargar', '2_parsear_cpu': '2 · Parsear (CPU)', '3_emparejar': '3 · Emparejar', '1b_fichas': '1b · Fichas', '4_persistir': '4 · Persistir', 'cola_fallidos': 'Cola de fallidos' };
+const tabla = (cab, filas) => `<table><thead><tr>${cab.map(c => `<th${c.n ? ' class="num"' : ''}>${c.t ?? c}</th>`).join('')}</tr></thead><tbody>${filas.join('')}</tbody></table>`;
+const n2 = v => v == null ? '—' : (+v).toFixed(2), n3 = v => v == null ? '—' : (+v).toFixed(3);
+try {
+  const m = await json('/data/metricas.json'); const u = m.ultima, t = u.tiempos;
+  $('#resumen').innerHTML = `
+    <div class="panel"><div class="sub">Última ejecución</div><div class="dato">${fecha(u.fin)}</div><div class="sub">modo ${esc(u.modo)} · ${u.workersIo} workers E/S · ${u.workersCpu} de CPU${u.replay ? ' · replay' : ' · en vivo'}</div></div>
+    <div class="panel"><div class="sub">Duración total</div><div class="dato">${n2(t.total)} s</div><div class="sub">pipeline ${n2(t.pipeline)} s</div></div>
+    <div class="panel"><div class="sub">Juegos publicados</div><div class="dato">${m.publicados} / ${m.catalogo}</div><div class="sub">con precio en 2 tiendas o más</div></div>`;
+  const claves = Object.keys(NOM).filter(k => t[k] != null);
+  new Chart($('#etapas'), { type: 'bar', data: { labels: claves.map(k => NOM[k]), datasets: [{ data: claves.map(k => t[k]), backgroundColor: claves.map(k => k.includes('emparejar') ? C('--violeta') : C('--cian')), borderRadius: 6 }] },
+    options: { indexAxis: 'y', maintainAspectRatio: false, plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => c.raw.toFixed(2) + ' s' } } }, scales: { x: { title: { display: true, text: 'segundos' } } } } });
+  $('#sitios').innerHTML = tabla(['Sitio', { t: 'Exitosas', n: 1 }, { t: 'Reintentadas', n: 1 }, { t: 'Fallidas', n: 1 }],
+    m.solicitudes.map(s => `<tr><td>${esc(s.dominio)}</td><td class="num">${s.exitosas}</td><td class="num">${s.reintentadas}</td><td class="num">${s.fallidas}</td></tr>`));
+  $('#noPub').innerHTML = m.noPublicados.length ? tabla(['Juego', 'Tiendas con precio', 'Motivo'], m.noPublicados.slice(0, 300).map(x => `<tr><td>${esc(x.titulo)}</td><td>${esc(x.tiendas.join(', ') || '—')}</td><td>${x.motivo === 'sin_emparejar' ? 'Sin emparejar' : 'Una sola tienda'}</td></tr>`)) : '<p class="sub">Ninguno.</p>';
+  $('#dudosos').innerHTML = m.dudosos.length ? tabla(['Juego', 'Tienda', 'Título en la tienda', { t: 'Similitud', n: 1 }, 'Motivo'], m.dudosos.map(x => `<tr><td>${esc(x.titulo)}</td><td>${esc(x.tienda)}</td><td><a href="${esc(x.url)}" target="_blank" rel="noopener">${esc(x.tituloTienda)}</a></td><td class="num">${n3(x.similitud)}</td><td>${esc((x.motivo || '').replaceAll('_', ' '))}</td></tr>`)) : '<p class="sub">Ninguno.</p>';
+  $('#fallos').innerHTML = m.fallos.length ? tabla(['Juego', 'Fuente', 'Error'], m.fallos.map(x => `<tr><td>${esc(x.titulo)}</td><td>${esc(x.fuente)}</td><td>${esc(x.error)}</td></tr>`)) : '<p class="sub">Sin fallos en la última ejecución.</p>';
+} catch (e) { console.error(e); }
+
+try {
+  const b = await json('/data/bench.json'); const f = b.ficha;
+  $('#ficha').innerHTML = `<h2>Ficha del equipo de medición</h2><div class="pila">
+    <span class="chip">${esc(f.procesador)}</span><span class="chip">${f.nucleosFisicos} núcleos físicos</span><span class="chip">${f.nucleosLogicos} lógicos</span>
+    <span class="chip">SMT ${f.smt ? 'activo' : 'no'}</span><span class="chip">${esc(f.memoria)} RAM</span><span class="chip">${esc(f.sistemaOperativo)}</span><span class="chip">${esc(f.runtime)}</span></div>`;
+  const curva = (canvas, e, nota) => {
+    if (!e) return;
+    const ps = e.filas.map(r => r.p);
+    new Chart($(canvas), { type: 'line', data: { labels: ps, datasets: [
+      { label: 'S_abs (vs. secuencial)', data: e.filas.map(r => r.sabs), borderColor: C('--cian'), backgroundColor: C('--cian'), tension: .2 },
+      { label: 'S_rel (vs. p=1)', data: e.filas.map(r => r.srel), borderColor: C('--violeta'), backgroundColor: C('--violeta'), tension: .2 },
+      { label: 'Ideal (S = p)', data: ps, borderColor: C('--niebla'), borderDash: [5, 5], pointRadius: 0 },
+      { label: 'Eficiencia E(p)', data: e.filas.map(r => r.e), borderColor: C('--alerta'), backgroundColor: C('--alerta'), yAxisID: 'y2', tension: .2 }] },
+      options: { maintainAspectRatio: false, scales: { x: { title: { display: true, text: 'workers (p)' } }, y: { type: 'logarithmic', title: { display: true, text: 'speedup' } }, y2: { position: 'right', min: 0, grid: { drawOnChartArea: false }, title: { display: true, text: 'eficiencia' } } } } });
+    $(nota).textContent = `Secuencial: ${n2(e.secuencial.mediana)} s (mediana de ${e.secuencial.muestras.length}). Fracción serial estimada (Karp–Flatt, p ≤ núcleos): ${e.fraccionSerialAmdahl ?? '—'}.`;
+  };
+  const kDesc = Object.keys(b.etapas).find(k => k.startsWith('descarga_lat100')) || Object.keys(b.etapas).find(k => k.startsWith('descarga'));
+  curva('#spDesc', b.etapas[kDesc], '#notaDesc');
+  curva('#spEmp', b.etapas.emparejar, '#notaEmp');
+  $('#tablas').innerHTML = Object.entries(b.etapas).map(([k, e]) => `<h3 class="sora" style="font-size:15px;margin:18px 0 6px">${esc(k.replace('_lat', ' · latencia ').replace('_jit', ' ms · jitter '))}${k.startsWith('descarga') ? ' ms' : ''}</h3>` + tabla(
+    ['Workers (p)', { t: 'Mediana (s)', n: 1 }, { t: 'Mín – máx (s)', n: 1 }, { t: 'S_abs', n: 1 }, { t: 'S_rel', n: 1 }, { t: 'E(p)', n: 1 }, { t: 'e (Karp–Flatt)', n: 1 }],
+    [`<tr><td>Secuencial</td><td class="num">${n3(e.secuencial.mediana)}</td><td class="num">${n3(e.secuencial.min)} – ${n3(e.secuencial.max)}</td><td class="num">1,00</td><td class="num">—</td><td class="num">—</td><td class="num">—</td></tr>`,
+     ...e.filas.map(r => `<tr><td>${r.p}</td><td class="num">${n3(r.t.mediana)}</td><td class="num">${n3(r.t.min)} – ${n3(r.t.max)}</td><td class="num">${n2(r.sabs)}</td><td class="num">${n2(r.srel)}</td><td class="num">${n2(r.e)}</td><td class="num">${r.karpFlatt == null ? '—' : n3(r.karpFlatt)}</td></tr>`)])).join('');
+  const kp = Object.keys(b.pipeline || {})[0];
+  if (kp) {
+    const p = b.pipeline[kp], modos = ['seq', 'conc', 'par'].filter(x => p.modos[x]);
+    new Chart($('#modos'), { type: 'bar', data: { labels: modos.map(x => ({ seq: 'Secuencial', conc: 'Concurrente (E/S)', par: 'Paralelo completo' }[x])),
+      datasets: [{ data: modos.map(x => p.modos[x].mediana), backgroundColor: [C('--niebla'), C('--cian'), C('--violeta')], borderRadius: 8 }] },
+      options: { maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { title: { display: true, text: 'segundos (mediana)' } } } } });
+    const s = p.modos.seq?.mediana;
+    $('#notaModos').textContent = `Latencia simulada ${p.latencia} ms. Speedup absoluto: concurrente ${n2(s / p.modos.conc?.mediana)}×, paralelo ${n2(s / p.modos.par?.mediana)}×. Los tres modos dieron el mismo resultado (hash ${esc(p.hash)}).`;
+  }
+  if (b.contencion) {
+    const c = b.contencion, ws = Object.keys(c.tiemposMs.lock_global);
+    $('#contencion').innerHTML = `<p class="sub">Conteo de ofertas por plataforma sobre ${c.elementos.toLocaleString('es-CR')} elementos. Secuencial: ${n2(c.secuencialMs.mediana)} ms.</p>` + tabla(['Mecanismo', ...ws.map(w => ({ t: 'p=' + w + ' (ms)', n: 1 }))],
+      Object.entries(c.tiemposMs).map(([k, v]) => `<tr><td>${{ lock_global: 'Lock global', local_por_hilo: 'Local por hilo + combinar', concurrent_dictionary: 'ConcurrentDictionary' }[k] || k}</td>${ws.map(w => `<td class="num">${n2(v[w].mediana)}</td>`).join('')}</tr>`));
+  }
+  if (b.carrera) $('#carrera').innerHTML = `<h2 style="margin-top:18px">Condición de carrera reproducida</h2><p class="sub">${b.carrera.intentos.map(i => `Intento ${i.intento}: se perdieron <b>${i.perdidos.toLocaleString('es-CR')}</b> de ${b.carrera.esperado.toLocaleString('es-CR')} incrementos`).join('<br>')}<br>Con Interlocked: ${b.carrera.conInterlocked.toLocaleString('es-CR')} (correcto).</p>`;
+} catch (e) { $('#ficha').innerHTML = '<p class="sub">Aún no hay mediciones publicadas.</p>'; console.error(e); }
+</script></body></html>

@@ -1,0 +1,25 @@
+{
+  // Configuración por defecto del pipeline (ADR-004). La línea de comandos la sobreescribe.
+  "Modo": "Par",
+  "WorkersIo": 8,
+  "WorkersCpu": 2,
+  "MaxVariantesPorTienda": 3,
+  "ColaDescubrir": 64,
+  "ColaDescargar": 32,
+  "ColaPersistir": 128,
+  "LimitePorDominio": {
+    "store.steampowered.com": 3, "catalog.gog.com": 3, "www.metacritic.com": 2,
+    "www.nintendo.com": 2, "www.gamestop.com": 2, "api.igdb.com": 1, "id.twitch.tv": 1, "howlongtobeat.com": 1
+  },
+  "IntervaloMinMs": { "store.steampowered.com": 1500 },
+  "LimiteDominioReplay": 1024,
+  "TimeoutSeg": 15,
+  "MaxReintentos": 4,
+  "BackoffBaseMs": 500,
+  "CacheHoras": 12,
+  "LatenciaMs": 100,
+  "JitterMs": 0,
+  "Semilla": 42,
+  "MinJuegos": 500,
+  "Umbral": 0.88
+}

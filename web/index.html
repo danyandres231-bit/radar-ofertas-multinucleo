@@ -1,0 +1,69 @@
+<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=Sora:wght@300;500;700;800&display=swap" rel="stylesheet"><link rel="stylesheet" href="/assets/app.css"><link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 32 32%22%3E%3Ccircle cx=%2216%22 cy=%2216%22 r=%2210%22 fill=%22none%22 stroke=%22%235ce1e6%22 stroke-width=%223%22/%3E%3Ccircle cx=%2216%22 cy=%2216%22 r=%223%22 fill=%22%238b7cf6%22/%3E%3C/svg%3E"><title>Radar de Ofertas</title></head><body>
+<div class="aurora" aria-hidden="true"></div>
+<header class="barra"><div class="envoltura">
+  <a class="marca" href="/"><span class="punto"></span><span class="txt">Radar de Ofertas</span></a>
+  <nav class="menu"><a href="/" aria-current="page">Ofertas</a><a href="/metricas.html" >Métricas</a></nav>
+  <button class="tema" type="button" aria-label="Cambiar tema claro u oscuro">◐</button>
+</div></header>
+<main class="envoltura">
+  <section class="heroe">
+    <div class="sello">Última actualización: <b id="actualizado">—</b></div>
+    <h1 id="titulo">El mejor precio de <span class="acento">cada juego</span>, en cada tienda.</h1>
+    <p>Comparamos Steam, GOG, Nintendo eShop y GameStop para más de 600 juegos. Los datos los recoge un pipeline paralelo en C# que corre solo cada 12 horas.</p>
+  </section>
+  <section class="filtros" aria-label="Filtros">
+    <label>Buscar<input id="q" type="search" placeholder="Zelda, Hades, Persona…"></label>
+    <label>Tipo<select id="tipo"><option value="">Todos</option><option value="juego">Juego</option><option value="juego+dlc">Juego + DLC</option><option value="dlc">DLC</option><option value="otro">Otro</option></select></label>
+    <label>Plataforma<select id="plataforma"><option value="">Todas</option></select></label>
+    <label>Formato<select id="formato"><option value="">Todos</option><option value="digital">Digital</option><option value="fisico">Físico</option></select></label>
+    <label>Tienda<select id="tienda"><option value="">Todas</option><option value="steam">Steam</option><option value="gog">GOG</option><option value="nintendo">Nintendo eShop</option><option value="gamestop">GameStop</option></select></label>
+    <label>Ordenar<select id="orden"><option value="descuento">% de descuento</option><option value="precio">Mejor precio</option><option value="nombre">Nombre</option><option value="score">Calificación</option></select></label>
+  </section>
+  <label style="display:inline-flex;gap:8px;align-items:center;color:var(--niebla);font-size:14px"><input type="checkbox" id="soloOferta"> Solo en oferta</label>
+  <p class="conteo" id="conteo" aria-live="polite"></p>
+  <section class="rejilla" id="rejilla"></section>
+  <button class="mas" id="mas" type="button" hidden>Cargar más</button>
+</main>
+<footer><div class="envoltura">Proyecto académico IC-3101 Arquitectura de Computadoras · TEC San Carlos · II Semestre 2026. Precios en USD tomados de Steam, GOG, Nintendo eShop y GameStop; los enlaces llevan a cada tienda. Sin afiliación con ninguna tienda.</div></footer>
+<script type="module">
+import { $, dinero, fecha, esc, claseScore, json, armar, tilt, tema } from '/assets/app.js';
+tema(); armar($('#titulo')); tilt($('#rejilla'));
+const POR_PAGINA = 36; let datos = [], filtrados = [], mostrados = 0;
+const f = id => $('#' + id);
+function tarjeta(j) {
+  const m = j.mejor, score = j.metascore ?? (j.steamUsuarios != null ? null : null);
+  return `<a class="tarjeta" href="/juego.html?id=${j.id}">
+    <div class="portada">${j.imagen ? `<img src="${esc(j.imagen)}" alt="" loading="lazy">` : ''}
+      <div class="etiquetas">${m.descuento > 0 ? `<span class="chip desc">-${m.descuento}%</span>` : ''}${j.minimoHistorico ? '<span class="chip minimo">Mínimo histórico</span>' : ''}${j.desactualizado ? '<span class="chip viejo" title="Alguna fuente falló en la última ejecución">Dato viejo</span>' : ''}</div></div>
+    <div class="cuerpo"><h3>${esc(j.titulo)}</h3>
+      <div class="meta"><span>${esc((j.plataformas || []).join(' · '))}</span>${score != null ? `<span class="score ${claseScore(score)}" title="Metascore">${Math.round(score)}</span>` : ''}</div>
+      <div class="precio"><span class="actual">${dinero(m.actual)}</span>${m.regular && m.regular > m.actual ? `<s>${dinero(m.regular)}</s>` : ''}</div>
+      <div class="meta"><span>en ${esc(m.tiendaNombre)} · ${m.formato === 'fisico' ? 'físico' : 'digital'}</span><span>${j.tiendas.length} tiendas</span></div>
+    </div></a>`;
+}
+function aplicar() {
+  const q = f('q').value.trim().toLowerCase(), ti = f('tipo').value, pl = f('plataforma').value, fo = f('formato').value, td = f('tienda').value, so = f('soloOferta').checked;
+  filtrados = datos.filter(j => (!q || j.titulo.toLowerCase().includes(q)) && (!ti || j.tipo === ti) && (!pl || j.plataformas.includes(pl))
+    && (!fo || j.formatos.includes(fo)) && (!td || j.tiendas.includes(td)) && (!so || j.enOferta));
+  const o = f('orden').value;
+  const cmp = { nombre: (a, b) => a.titulo.localeCompare(b.titulo, 'es'), precio: (a, b) => a.mejor.actual - b.mejor.actual,
+    descuento: (a, b) => b.descuentoMax - a.descuentoMax || a.mejor.actual - b.mejor.actual, score: (a, b) => (b.metascore ?? -1) - (a.metascore ?? -1) }[o];
+  filtrados.sort(cmp); mostrados = 0; f('rejilla').innerHTML = ''; mas();
+  f('conteo').textContent = `${filtrados.length} juegos${filtrados.length !== datos.length ? ' de ' + datos.length : ''}`;
+}
+function mas() {
+  const sig = filtrados.slice(mostrados, mostrados + POR_PAGINA); mostrados += sig.length;
+  f('rejilla').insertAdjacentHTML('beforeend', sig.map(tarjeta).join(''));
+  f('mas').hidden = mostrados >= filtrados.length;
+  if (!filtrados.length) f('rejilla').innerHTML = '<p class="vacio">Ningún juego coincide con esos filtros.</p>';
+}
+try {
+  const r = await json('/data/juegos.json'); datos = r.juegos;
+  f('actualizado').textContent = fecha(r.actualizado);
+  const plats = [...new Set(datos.flatMap(j => j.plataformas))].sort();
+  f('plataforma').insertAdjacentHTML('beforeend', plats.map(p => `<option>${esc(p)}</option>`).join(''));
+  ['q', 'tipo', 'plataforma', 'formato', 'tienda', 'orden', 'soloOferta'].forEach(id => f(id).addEventListener('input', aplicar));
+  f('mas').addEventListener('click', mas);
+  aplicar();
+} catch (e) { f('rejilla').innerHTML = '<p class="vacio">Todavía no hay datos publicados.</p>'; console.error(e); }
+</script></body></html>

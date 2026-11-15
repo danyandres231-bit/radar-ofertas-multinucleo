@@ -487,3 +487,5 @@ $RECYCLE.BIN/
 data/cache/
 *.db-shm
 *.db-wal
+data/replay/
+data/bench/*.csv
