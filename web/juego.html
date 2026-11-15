@@ -4,7 +4,7 @@
 <header class="barra"><div class="envoltura">
   <a class="marca" href="/"><span class="punto"></span><span class="txt">Radar de Ofertas</span></a>
   <nav class="menu"><a href="/" >Ofertas</a><a href="/metricas.html" >Métricas</a></nav>
-  <button class="tema" type="button" aria-label="Cambiar tema claro u oscuro">◐</button>
+  <button class="tema" type="button" aria-label="Cambiar tema claro u oscuro"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 3a9 9 0 0 0 0 18z" fill="currentColor"/></svg></button>
 </div></header>
 <main class="envoltura" id="app"><p class="vacio">Cargando…</p></main>
 <footer><div class="envoltura">Proyecto académico IC-3101 Arquitectura de Computadoras · TEC San Carlos · II Semestre 2026. Precios en USD tomados de Steam, GOG, Nintendo eShop y GameStop; los enlaces llevan a cada tienda. Sin afiliación con ninguna tienda.</div></footer>
@@ -50,11 +50,11 @@ try {
   </section>`;
   armar($('#titulo'));
   const css = getComputedStyle(document.documentElement);
-  const colores = { steam: '#8fb8ff', gog: '#8b7cf6', nintendo: '#ff7a90', gamestop: '#5ce1e6' };
+  const colores = { steam: css.getPropertyValue('--serie-1').trim(), gog: css.getPropertyValue('--serie-4').trim(), nintendo: css.getPropertyValue('--serie-2').trim(), gamestop: css.getPropertyValue('--serie-3').trim() };
   const fechas = [...new Set(j.historial.flatMap(h => h.puntos.map(p => p.fecha)))].sort();
   new Chart($('#hist'), { type: 'line',
     data: { labels: fechas, datasets: j.historial.map(h => ({ label: h.nombre, data: fechas.map(f => h.puntos.find(p => p.fecha === f)?.precio ?? null),
-      borderColor: colores[h.tienda], backgroundColor: colores[h.tienda], spanGaps: true, stepped: true, pointRadius: 3, borderWidth: 2 })) },
+      borderColor: colores[h.tienda], backgroundColor: colores[h.tienda], spanGaps: true, stepped: true, pointRadius: 4, borderWidth: 2 })) },
     options: { maintainAspectRatio: false, plugins: { legend: { labels: { color: css.getPropertyValue('--niebla') } } },
       scales: { x: { ticks: { color: css.getPropertyValue('--niebla') }, grid: { color: css.getPropertyValue('--borde') } },
                 y: { ticks: { color: css.getPropertyValue('--niebla'), callback: v => '$' + v }, grid: { color: css.getPropertyValue('--borde') } } } } });

@@ -12,7 +12,7 @@ public sealed class Emparejador
     sealed record Clave(string[] Tokens, string Norm, int Secuela);
 
     /// <summary>Puntaje de un candidato contra un juego (máximo sobre título canónico y alternativos), con reglas duras.</summary>
-    public (double score, string? motivo) Puntuar(IReadOnlyList<(string norm, string[] tok, int sec)> claves, bool juegoEsExtra, CandidatoNorm c)
+    public (double score, string? motivo) Puntuar(IReadOnlyList<(string norm, string[] tok, int sec)> claves, bool juegoEsExtra, CandidatoNorm c, int? anioJuego = null)
     {
         double mejor = 0; int secMejor = 0;
         foreach (var (norm, tok, sec) in claves)
@@ -22,9 +22,13 @@ public sealed class Emparejador
         }
         string? motivo = null;
         if (secMejor != c.Secuela) { mejor = Math.Min(mejor, Umbral - 0.05); motivo = "numero_secuela_distinto"; }
+        // Remake vs. original: la tienda pone el año, p. ej. "Resident Evil 4 (2005)" frente al remake de 2023.
+        else if (c.Anio is int a && anioJuego is int b && Math.Abs(a - b) > 1) { mejor = Math.Min(mejor, Umbral - 0.05); motivo = "anio_distinto"; }
         else if (c.EsExtra && !juegoEsExtra) motivo = "dlc_o_bundle";
         return (mejor, motivo);
     }
+
+    public static int? AnioDe(string? fecha) => fecha is { Length: >= 4 } && int.TryParse(fecha[..4], out var a) ? a : null;
 
     public static IReadOnlyList<(string, string[], int)> ClavesDe(Juego j)
     {
@@ -41,6 +45,7 @@ public sealed class Emparejador
     public void Emparejar(FichaJuego f, IReadOnlyList<CandidatoNorm> globales, IReadOnlyList<CandidatoNorm> propios)
     {
         var claves = ClavesDe(f.Juego);
+        int? anio = AnioDe(f.Juego.FechaLanz ?? f.FechaMc);
         bool juegoExtra = f.Juego.Tipo != "juego";
         var plataformas = new HashSet<string>(f.PlataformasMc.Concat(f.Juego.Plataformas).Select(Plataformas.Canonica));
 
@@ -48,7 +53,7 @@ public sealed class Emparejador
         var mejores = new Dictionary<(string, string), (CandidatoNorm c, double s, string? motivo)>();
         void Evaluar(CandidatoNorm c)
         {
-            var (s, motivo) = Puntuar(claves, juegoExtra, c);
+            var (s, motivo) = Puntuar(claves, juegoExtra, c, anio);
             if (s < Umbral - MargenDudoso) return;
             var plat = Plataformas.Canonica(c.C.Plataforma ?? "pc");
             if (c.C.Tienda is "nintendo" or "gamestop" && plataformas.Count > 0 && !plataformas.Contains(plat)) return;

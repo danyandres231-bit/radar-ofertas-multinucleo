@@ -35,12 +35,21 @@ public static partial class Metacritic
                 Titulo = Util.Html(alt.Groups[1].Value),
                 FechaLanz = fecha,
                 MetascoreCatalogo = s.Success ? int.Parse(s.Groups[1].Value) : null,
-                ImagenUrl = img.Success ? Util.Html(img.Groups[1].Value).Replace("height=144", "height=432").Replace("width=96", "width=288") : null,
+                ImagenUrl = img.Success ? ImagenOriginal(Util.Html(img.Groups[1].Value)) : null,
                 Plataformas = { Radar.Core.Matching.Plataformas.Canonica(plataforma == "xbox-series-x" ? "series" : plataforma) },
                 Origen = "metacritic:browse"
             });
         }
         return l;
+    }
+
+    /// <summary>Las URL "resize" de Metacritic van firmadas; se usa la ruta original del catálogo (sin firma).</summary>
+    public static string ImagenOriginal(string url)
+    {
+        var i = url.IndexOf("/catalog/", StringComparison.Ordinal);
+        if (i < 0) return url;
+        var ruta = url[i..]; var q = ruta.IndexOf('?'); if (q > 0) ruta = ruta[..q];
+        return "https://www.metacritic.com/a/img" + ruta;
     }
 
     public sealed record Ficha(int? Metascore, List<string> Plataformas, string? Fecha, string? Imagen);

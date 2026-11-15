@@ -7,18 +7,29 @@ export const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;'
 export const claseScore = v => v >= 85 ? 's-alto' : v >= 70 ? 's-medio' : 's-bajo';
 export async function json(url) { const r = await fetch(url, { cache: 'no-cache' }); if (!r.ok) throw new Error(url + ' ' + r.status); return r.json(); }
 
-// Título que se arma letra por letra.
+// Título que se arma letra por letra (las palabras no se cortan; un <span> de acento entra como bloque).
 export function armar(el) {
   if (!el) return;
   const partes = [...el.childNodes];
   el.textContent = '';
   let i = 0;
+  const letra = (txt, destino) => {
+    const s = document.createElement('span');
+    s.className = 'l'; s.textContent = txt; s.style.animationDelay = (i++ * 28) + 'ms';
+    destino.appendChild(s); return s;
+  };
   for (const n of partes) {
-    const destino = n.nodeType === 1 ? el.appendChild(n.cloneNode(false)) : el;
-    for (const ch of n.textContent) {
-      const s = document.createElement('span');
-      s.className = 'l'; s.textContent = ch; s.style.animationDelay = (i++ * 28) + 'ms';
-      destino.appendChild(s);
+    if (n.nodeType === 1) {               // elemento (p. ej. .acento con degradado): entra completo
+      const c = n.cloneNode(true); c.classList.add('l'); c.style.animationDelay = (i * 28) + 'ms'; i += 6;
+      el.appendChild(c); continue;
+    }
+    for (const trozo of n.textContent.split(/(\s+)/)) {
+      if (!trozo) continue;
+      if (/^\s+$/.test(trozo)) { el.appendChild(document.createTextNode(' ')); continue; }
+      const palabra = document.createElement('span');
+      palabra.className = 'palabra';
+      for (const ch of trozo) letra(ch, palabra);
+      el.appendChild(palabra);
     }
   }
   el.classList.add('armar');

@@ -18,7 +18,7 @@ public static partial class Normalizador
         "ultimate edition", "gold edition", "standard edition", "digital deluxe edition", "special edition", "enhanced edition",
         "collectors edition", "launch edition", "edition", "remastered", "remaster", "directors cut", "the final cut", "final cut"
     };
-    static readonly HashSet<string> PalabrasExtra = new() { "dlc", "pack", "bundle", "season", "pass", "soundtrack", "expansion", "upgrade", "costume", "skin", "currency", "coins", "points", "demo", "trial" };
+    static readonly HashSet<string> PalabrasExtra = new() { "toolkit", "editor", "artbook", "dlc", "pack", "bundle", "season", "pass", "soundtrack", "expansion", "upgrade", "costume", "skin", "currency", "coins", "points", "demo", "trial" };
     static readonly HashSet<string> Vacias = new() { "the", "a", "an", "of", "and", "y", "de", "la", "el" };
     static readonly Dictionary<string, string> Romanos = new()
     {
@@ -75,9 +75,13 @@ public static partial class Normalizador
 
     public static bool EsExtra(string norm) => norm.Split(' ').Any(PalabrasExtra.Contains);
 
+    [GeneratedRegex(@"\((19|20)(\d{2})\)")] private static partial Regex AnioEnTitulo();
+
+    public static int? Anio(string titulo) { var m = AnioEnTitulo().Match(titulo); return m.Success ? int.Parse(m.Groups[1].Value + m.Groups[2].Value) : null; }
+
     public static CandidatoNorm Preparar(Candidato c)
     {
         var n = Normalizar(c.Titulo);
-        return new CandidatoNorm { C = c, Norm = n, Tokens = Tokens(n), Secuela = Secuela(n), EsExtra = EsExtra(n) || c.TipoProducto != "juego" };
+        return new CandidatoNorm { C = c, Norm = n, Tokens = Tokens(n), Secuela = Secuela(n), EsExtra = EsExtra(n) || c.TipoProducto != "juego", Anio = Anio(c.Titulo) };
     }
 }

@@ -46,8 +46,8 @@ public sealed class Igdb
         _secret = Environment.GetEnvironmentVariable("IGDB_CLIENT_SECRET");
     }
 
-    /// <summary>En replay no hacen falta credenciales: las respuestas ya están capturadas.</summary>
-    public bool Disponible(bool replay) => replay || (!string.IsNullOrEmpty(_id) && !string.IsNullOrEmpty(_secret));
+    /// <summary>Solo si hay credenciales (también en replay, para que vivo y replay hagan las mismas solicitudes).</summary>
+    public bool Disponible(bool replay) => !string.IsNullOrEmpty(_id) && !string.IsNullOrEmpty(_secret);
 
     async Task<Dictionary<string, string>> Headers(CancellationToken ct)
     {

@@ -21,6 +21,8 @@ public static class Publicador
     sealed record Precio(string Tienda, string TiendaNombre, double Actual, double? Regular, int Descuento, bool EnOferta, string Criterio,
         string Formato, string? Plataforma, string Url, string TituloTienda, double Similitud, bool Dudoso, string ObtenidoEn, bool Desactualizado);
 
+    static string? Img(string? u) => u is null ? null : u.Contains("metacritic.com") ? Radar.Scraping.Fuentes.Metacritic.ImagenOriginal(u) : u;
+
     public static void Publicar(Db db, Opciones op, TextWriter log)
     {
         var dir = op.RutaWeb;
@@ -75,7 +77,7 @@ public static class Publicador
 
             tarjetas.Add(new
             {
-                j.Id, j.Slug, j.Titulo, Imagen = j.ImagenUrl, j.Tipo, j.FechaLanz, Plataformas = plats,
+                j.Id, j.Slug, j.Titulo, Imagen = Img(j.ImagenUrl), j.Tipo, j.FechaLanz, Plataformas = plats,
                 Formatos = actuales.Select(p => p.Formato).Distinct().OrderBy(x => x),
                 Tiendas = actuales.Select(p => p.Tienda).Distinct().OrderBy(x => x),
                 Mejor = new { mejor.Tienda, mejor.TiendaNombre, mejor.Actual, mejor.Regular, mejor.Descuento, mejor.Url, mejor.Formato, mejor.Plataforma },
@@ -95,7 +97,7 @@ public static class Publicador
             });
             var detalle = new
             {
-                j.Id, j.Slug, j.Titulo, Imagen = j.ImagenUrl, j.Tipo, j.FechaLanz, Msrp = j.Msrp, Plataformas = plats, TitulosAlt = j.TitulosAlt,
+                j.Id, j.Slug, j.Titulo, Imagen = Img(j.ImagenUrl), j.Tipo, j.FechaLanz, Msrp = j.Msrp, Plataformas = plats, TitulosAlt = j.TitulosAlt,
                 Precios = actuales, MinimoHistorico = minHist,
                 Calificaciones = cj.Select(c => new { c.F, c.V, c.O }),
                 Duracion = dj.F is null ? null : new { Fuente = dj.F, Principal = dj.A, Extras = dj.B, Completista = dj.C, ObtenidoEn = dj.O },

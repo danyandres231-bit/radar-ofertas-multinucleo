@@ -38,6 +38,7 @@ public sealed class CandidatoNorm
     public required string[] Tokens { get; init; }
     public required int Secuela { get; init; }
     public required bool EsExtra { get; init; }
+    public int? Anio { get; init; }   // año entre paréntesis en el título de la tienda, p. ej. "Resident Evil 2 (1998)"
 }
 
 public sealed record Emparejamiento(Candidato Candidato, double Similitud, bool Dudoso, string? Motivo);

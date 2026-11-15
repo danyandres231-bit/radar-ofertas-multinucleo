@@ -76,7 +76,7 @@ namespace Radar.Pipeline
         public static Opciones Cargar(string[] args)
         {
             var op = File.Exists("config/radar.json")
-                ? JsonSerializer.Deserialize<Opciones>(File.ReadAllText("config/radar.json"), new JsonSerializerOptions { PropertyNameCaseInsensitive = true, ReadCommentHandling = JsonCommentHandling.Skip })!
+                ? JsonSerializer.Deserialize<Opciones>(File.ReadAllText("config/radar.json"), new JsonSerializerOptions { PropertyNameCaseInsensitive = true, ReadCommentHandling = JsonCommentHandling.Skip, Converters = { new System.Text.Json.Serialization.JsonStringEnumConverter() } })!
                 : new Opciones();
             for (int i = 0; i < args.Length; i++)
             {

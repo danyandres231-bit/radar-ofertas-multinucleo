@@ -54,7 +54,7 @@ public sealed class ReplayHandler : HttpMessageHandler
     protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage req, CancellationToken ct)
     {
         string? cuerpo = req.Content is null ? null : await req.Content.ReadAsStringAsync(ct);
-        var clave = AlmacenReplay.Clave(req.Method.Method, req.RequestUri!.ToString(), cuerpo);
+        var clave = AlmacenReplay.Clave(req.Method.Method, req.RequestUri!.OriginalString, cuerpo);
         // Jitter determinista por URL y semilla: misma configuración → misma latencia → medición reproducible.
         int jitter = 0;
         if (_jitterMs > 0)

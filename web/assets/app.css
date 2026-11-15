@@ -2,12 +2,13 @@
   --abismo:#0b1426;--panel:#12203a;--panel2:#16294a;--hielo:#e8f1ff;--niebla:#93a6c4;
   --cian:#5ce1e6;--violeta:#8b7cf6;--azul:#8fb8ff;--borde:#93a6c429;--ok:#5be39a;--alerta:#ffb86b;--malo:#ff7a90;
   --radio:16px;--sombra:0 10px 30px -12px #5ce1e633;
+  --serie-1:#3987e5;--serie-2:#d95926;--serie-3:#199e70;--serie-4:#9085e9;--serie-neutra:#93a6c4;
 }
 @media (prefers-color-scheme: light){
-  :root:not([data-theme="dark"]){--abismo:#eef3fb;--panel:#ffffff;--panel2:#f3f7fe;--hielo:#0f1b33;--niebla:#4f6283;--borde:#1f3a6a1f;--cian:#0c9aa1;--violeta:#6a59e0;--azul:#3d6fd6;--sombra:0 10px 30px -14px #1f3a6a40}
+  :root:not([data-theme="dark"]){--abismo:#eef3fb;--panel:#ffffff;--panel2:#f3f7fe;--hielo:#0f1b33;--niebla:#4f6283;--borde:#1f3a6a1f;--cian:#0c9aa1;--violeta:#6a59e0;--azul:#3d6fd6;--sombra:0 10px 30px -14px #1f3a6a40;--serie-1:#2a78d6;--serie-2:#eb6834;--serie-3:#1baf7a;--serie-4:#6250d6;--serie-neutra:#4f6283;}
 }
-:root[data-theme="light"]{--abismo:#eef3fb;--panel:#ffffff;--panel2:#f3f7fe;--hielo:#0f1b33;--niebla:#4f6283;--borde:#1f3a6a1f;--cian:#0c9aa1;--violeta:#6a59e0;--azul:#3d6fd6;--sombra:0 10px 30px -14px #1f3a6a40}
-:root[data-theme="dark"]{--abismo:#0b1426;--panel:#12203a;--panel2:#16294a;--hielo:#e8f1ff;--niebla:#93a6c4;--borde:#93a6c429;--cian:#5ce1e6;--violeta:#8b7cf6;--azul:#8fb8ff}
+:root[data-theme="light"]{--abismo:#eef3fb;--panel:#ffffff;--panel2:#f3f7fe;--hielo:#0f1b33;--niebla:#4f6283;--borde:#1f3a6a1f;--cian:#0c9aa1;--violeta:#6a59e0;--azul:#3d6fd6;--sombra:0 10px 30px -14px #1f3a6a40;--serie-1:#2a78d6;--serie-2:#eb6834;--serie-3:#1baf7a;--serie-4:#6250d6;--serie-neutra:#4f6283;}
+:root[data-theme="dark"]{--serie-1:#3987e5;--serie-2:#d95926;--serie-3:#199e70;--serie-4:#9085e9;--serie-neutra:#93a6c4;--abismo:#0b1426;--panel:#12203a;--panel2:#16294a;--hielo:#e8f1ff;--niebla:#93a6c4;--borde:#93a6c429;--cian:#5ce1e6;--violeta:#8b7cf6;--azul:#8fb8ff}
 *{box-sizing:border-box}
 html,body{margin:0}
 body{background:var(--abismo);color:var(--hielo);font:16px/1.55 "IBM Plex Sans",system-ui,sans-serif;min-height:100vh;overflow-x:hidden}
@@ -32,7 +33,8 @@ header.barra .envoltura{display:flex;align-items:center;gap:18px;height:64px}
 nav.menu{display:flex;gap:4px;margin-left:auto}
 nav.menu a{color:var(--niebla);text-decoration:none;padding:8px 12px;border-radius:10px;font-family:Sora;font-weight:500;font-size:14px}
 nav.menu a[aria-current="page"],nav.menu a:hover{color:var(--hielo);background:var(--panel)}
-.tema{background:none;border:1px solid var(--borde);color:var(--niebla);border-radius:10px;width:38px;height:38px;cursor:pointer}
+.tema{background:none;border:1px solid var(--borde);color:var(--niebla);border-radius:10px;width:38px;height:38px;cursor:pointer;display:grid;place-items:center}
+.tema:hover{color:var(--hielo);border-color:color-mix(in srgb,var(--cian) 50%,transparent)}
 
 .heroe{padding:56px 0 24px}
 .heroe h1{font-size:clamp(34px,6vw,64px);line-height:1.02;letter-spacing:-.045em;margin:0 0 12px;font-weight:800}
@@ -42,6 +44,7 @@ nav.menu a[aria-current="page"],nav.menu a:hover{color:var(--hielo);background:v
 .sello b{color:var(--hielo);font-weight:600}
 
 /* Título que se arma */
+.armar .palabra{display:inline-block;white-space:nowrap}
 .armar .l{display:inline-block;opacity:0;filter:blur(8px);transform:translateY(.4em) rotate(6deg);animation:arma .7s cubic-bezier(.2,.8,.2,1) forwards;white-space:pre}
 @keyframes arma{to{opacity:1;filter:none;transform:none}}
 
@@ -90,7 +93,9 @@ table{width:100%;border-collapse:collapse;font-size:14px}
 th,td{text-align:left;padding:8px 6px;border-bottom:1px solid var(--borde);vertical-align:top}
 th{font-family:Sora;font-weight:600;font-size:12px;color:var(--niebla);text-transform:uppercase;letter-spacing:.04em}
 td.num,th.num{text-align:right;font-variant-numeric:tabular-nums}
-.tabla-scroll{overflow-x:auto}
+.tabla-scroll{overflow:auto}
+.tabla-scroll.alta{max-height:440px}
+.tabla-scroll.alta th{position:sticky;top:0;background:var(--panel)}
 .detalle-top{display:grid;grid-template-columns:260px 1fr;gap:28px;padding:36px 0 18px}
 .detalle-top img{width:100%;border-radius:var(--radio);border:1px solid var(--borde)}
 .detalle-top h1{font-size:clamp(28px,4.5vw,46px);letter-spacing:-.04em;line-height:1.05;margin:0 0 10px}

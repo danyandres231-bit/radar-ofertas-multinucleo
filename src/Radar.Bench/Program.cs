@@ -16,6 +16,7 @@ using Radar.Scraping.Http;
 var cmd = args.FirstOrDefault(a => !a.StartsWith("--")) ?? "todo";
 int reps = Arg("--reps", 5), latencia = Arg("--latencia", 100), jitter = Arg("--jitter", 0);
 int? limite = args.Contains("--limite") ? Arg("--limite", 0) : null;
+var modosArg = args.Contains("--modos") ? args[Array.IndexOf(args, "--modos") + 1].Split(',') : new[] { "seq", "conc", "par" };
 int Arg(string n, int def) { var i = Array.IndexOf(args, n); return i >= 0 && i + 1 < args.Length ? int.Parse(args[i + 1]) : def; }
 
 var res = Resultados.Cargar();
@@ -60,7 +61,7 @@ var cuerpo = new Dictionary<string, Func<Task>>
             else await Parallel.ForEachAsync(tareas, new ParallelOptions { MaxDegreeOfParallelism = p.Value }, async (u, _) => await Una(u));
             return sw.Elapsed.TotalSeconds;
         }
-        var e = Barrido("descarga", reps, new[] { 1, 2, 4, 8, 16, 32, 64 }, Medir, latencia, jitter);
+        var e = Barrido("descarga", reps, new[] { 1, 2, 4, 8, 16, 32, 64 }, Medir, latencia, jitter, calentar: false);
         res.Etapas[$"descarga_lat{latencia}_jit{jitter}"] = await e;
     },
 
@@ -84,7 +85,7 @@ var cuerpo = new Dictionary<string, Func<Task>>
             else Parallel.ForEach(fichas, new ParallelOptions { MaxDegreeOfParallelism = p.Value }, f => emp.Emparejar(f, globales, propios[f.Juego.Id]));
             var t = sw.Elapsed.TotalSeconds;
             var h = Runner.HashResultado(fichas);
-            if (p is null) hashSec = h; else if (h != hashSec) throw new Exception($"El resultado paralelo (p={p}) difiere del secuencial");
+            if (p is null) hashSec = h; else if (hashSec != null && h != hashSec) throw new Exception($"El resultado paralelo (p={p}) difiere del secuencial");
             return Task.FromResult(t);
         }
         int L = Environment.ProcessorCount;
@@ -118,8 +119,8 @@ var cuerpo = new Dictionary<string, Func<Task>>
         {
             var tiempos = new Dictionary<string, List<double>>();
             var etapas = new Dictionary<string, List<Dictionary<string, double>>>();
-            string? hash = null;
-            foreach (var (nombre, modo, io, cpu) in new[] { ("seq", Modo.Seq, 1, 1), ("conc", Modo.Conc, 16, 1), ("par", Modo.Par, 16, L) })
+            string? hash = null; bool distinto = false;
+            foreach (var (nombre, modo, io, cpu) in new[] { ("seq", Modo.Seq, 1, 1), ("conc", Modo.Conc, 16, 1), ("par", Modo.Par, 16, L) }.Where(x => modosArg.Contains(x.Item1)))
             {
                 tiempos[nombre] = new(); etapas[nombre] = new();
                 for (int r = 0; r < reps; r++)
@@ -129,16 +130,16 @@ var cuerpo = new Dictionary<string, Func<Task>>
                     var rr = await runner.EjecutarAsync(juegos, globales, CancellationToken.None);
                     tiempos[nombre].Add(rr.TiemposEtapa["pipeline"]);
                     etapas[nombre].Add(rr.TiemposEtapa.ToDictionary(k => k.Key, k => Math.Round(k.Value, 3)));
-                    hash ??= rr.Hash;
+                    hash ??= rr.Hash; if (rr.Hash != hash) distinto = true;
                     Console.WriteLine($"  [pipeline lat={lat}] {nombre} rep {r + 1}: {rr.TiemposEtapa["pipeline"]:F2} s hash={rr.Hash}{(rr.Hash != hash ? " ¡DISTINTO!" : "")}");
                 }
             }
-            res.Pipeline[$"lat{lat}_jit{jitter}"] = new ResultadoPipeline
-            {
-                Latencia = lat, Jitter = jitter, Modos = tiempos.ToDictionary(k => k.Key, k => Estad.Resumen(k.Value)),
-                Etapas = etapas.ToDictionary(k => k.Key, k => k.Value.First().Keys.ToDictionary(e => e, e => Math.Round(Estad.Mediana(k.Value.Select(x => x[e]).ToList()), 3))),
-                MismoResultado = true, Hash = hash
-            };
+            var clave = $"lat{lat}_jit{jitter}";
+            var rp = res.Pipeline.TryGetValue(clave, out var previo) ? previo : new ResultadoPipeline { Latencia = lat, Jitter = jitter, MismoResultado = true };
+            foreach (var (k, v) in tiempos) rp.Modos[k] = Estad.Resumen(v);
+            foreach (var (k, v) in etapas) rp.Etapas[k] = v.First().Keys.ToDictionary(e => e, e => Math.Round(Estad.Mediana(v.Select(x => x[e]).ToList()), 3));
+            rp.MismoResultado &= !distinto && (rp.Hash is null || rp.Hash == hash); rp.Hash = hash;
+            res.Pipeline[clave] = rp;
         }
     },
 
@@ -175,7 +176,7 @@ var cuerpo = new Dictionary<string, Func<Task>>
         {
             var j = juegos[c[0]];
             var cand = Normalizador.Preparar(new Candidato(c[2], c[3], c[4], null));
-            var (s, motivo) = emp.Puntuar(Emparejador.ClavesDe(j), j.Tipo != "juego", cand);
+            var (s, motivo) = emp.Puntuar(Emparejador.ClavesDe(j), j.Tipo != "juego", cand, Emparejador.AnioDe(j.FechaLanz));
             return (s, motivo, real: c[6].Trim() == "1", juego: c[1], tienda: c[3]);
         }).ToList();
         var curva = new List<object>();
@@ -224,10 +225,10 @@ async Task<List<FichaJuego>> DescargarTodo(List<Juego> juegos)
     return bag.OrderBy(f => f.Juego.Id).ToList();
 }
 
-static async Task<ResultadoEtapa> Barrido(string nombre, int reps, int[] workers, Func<int?, Task<double>> medir, int lat, int jit)
+static async Task<ResultadoEtapa> Barrido(string nombre, int reps, int[] workers, Func<int?, Task<double>> medir, int lat, int jit, bool calentar = true)
 {
     var sec = new List<double>();
-    await medir(1); // calentamiento (JIT, caché de disco del SO); no se cuenta
+    if (calentar) await medir(1); // calentamiento (JIT); no se cuenta
     for (int r = 0; r < reps; r++) { sec.Add(await medir(null)); Console.WriteLine($"  [{nombre}] sec rep {r + 1}: {sec[^1]:F2} s"); }
     var porP = new Dictionary<int, List<double>>();
     foreach (var p in workers)
