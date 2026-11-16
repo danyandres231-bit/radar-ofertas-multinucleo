@@ -1,62 +1,73 @@
-<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=Sora:wght@300;500;700;800&display=swap" rel="stylesheet"><link rel="stylesheet" href="/assets/app.css"><link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 32 32%22%3E%3Ccircle cx=%2216%22 cy=%2216%22 r=%2210%22 fill=%22none%22 stroke=%22%235ce1e6%22 stroke-width=%223%22/%3E%3Ccircle cx=%2216%22 cy=%2216%22 r=%223%22 fill=%22%238b7cf6%22/%3E%3C/svg%3E"><title>Detalle del juego</title>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script></head><body>
+<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=Sora:wght@300;500;700;800&display=swap" rel="stylesheet"><link rel="stylesheet" href="/assets/app.css"><link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 32 32%22%3E%3Ccircle cx=%2216%22 cy=%2216%22 r=%2210%22 fill=%22none%22 stroke=%22%235ce1e6%22 stroke-width=%223%22/%3E%3Ccircle cx=%2216%22 cy=%2216%22 r=%223%22 fill=%22%238b7cf6%22/%3E%3C/svg%3E"><title>Juego · Cazador de gamers</title></head><body>
 <div class="aurora" aria-hidden="true"></div>
 <header class="barra"><div class="envoltura">
-  <a class="marca" href="/"><span class="punto"></span><span class="txt">Radar de Ofertas</span></a>
-  <nav class="menu"><a href="/" >Ofertas</a><a href="/metricas.html" >Métricas</a></nav>
+  <a class="marca" href="/"><span class="punto"></span><span class="txt">Cazador de gamers</span></a>
+  <nav class="menu"><a href="/">Juegos</a></nav>
   <button class="tema" type="button" aria-label="Cambiar tema claro u oscuro"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 3a9 9 0 0 0 0 18z" fill="currentColor"/></svg></button>
 </div></header>
 <main class="envoltura" id="app"><p class="vacio">Cargando…</p></main>
-<footer><div class="envoltura">Proyecto académico IC-3101 Arquitectura de Computadoras · TEC San Carlos · II Semestre 2026. Precios en USD tomados de Steam, GOG, Nintendo eShop y GameStop; los enlaces llevan a cada tienda. Sin afiliación con ninguna tienda.</div></footer>
+<footer><div class="envoltura pie"><span><b class="sora">Cazador de gamers</b> · Precios en USD de Steam, GOG, Nintendo eShop y GameStop. No estamos afiliados a ninguna tienda.</span><a class="discreto" href="/metricas.html">Historial y métricas</a></div></footer>
 <script type="module">
-import { $, dinero, fecha, fechaCorta, esc, claseScore, detalle, armar, tema } from '/assets/app.js';
+import { $, dinero, fecha, fechaCorta, esc, detalle, armar, tema } from '/assets/app.js';
 tema();
 const id = new URLSearchParams(location.search).get('id');
 const app = $('#app');
-const NOMBRE_FUENTE = { metacritic: 'Metacritic (crítica)', steam_usuarios: 'Reseñas de usuarios de Steam' };
+const LETRA = { steam: 'S', gog: 'G', nintendo: 'N', gamestop: 'GS' };
+const colorNota = v => v >= 85 ? 'var(--ok)' : v >= 70 ? 'var(--alerta)' : 'var(--malo)';
+const textoSteam = v => v >= 95 ? 'Extremadamente positivas' : v >= 80 ? 'Muy positivas' : v >= 70 ? 'Mayormente positivas' : v >= 40 ? 'Variadas' : 'Mayormente negativas';
+const textoMeta = v => v >= 90 ? 'Aclamación universal' : v >= 75 ? 'Críticas favorables' : v >= 50 ? 'Críticas mixtas' : 'Críticas desfavorables';
 try {
   const j = await detalle(id);
-  document.title = j.titulo + ' · Radar de Ofertas';
-  const cal = j.calificaciones || [];
-  const d = j.duracion;
+  document.title = j.titulo + ' · Cazador de gamers';
+  const meta = j.calificaciones.find(c => c.f === 'metacritic')?.v, steam = j.calificaciones.find(c => c.f === 'steam_usuarios')?.v;
+  const mejor = j.precios[0], d = j.duracion;
+  const maxH = d ? Math.max(d.principal || 0, d.extras || 0, d.completista || 0) : 0;
   app.innerHTML = `
-  <section class="detalle-top">
-    <div>${j.imagen ? `<img src="${esc(j.imagen)}" alt="Portada de ${esc(j.titulo)}">` : ''}</div>
+  <section class="ficha">
+    <div class="portada-g">${j.imagen ? `<img src="${esc(j.imagen)}" alt="Portada de ${esc(j.titulo)}">` : ''}</div>
     <div>
       <h1 id="titulo">${esc(j.titulo)}</h1>
-      <div class="pila">${(j.plataformas || []).map(p => `<span class="chip">${esc(p)}</span>`).join('')}<span class="chip">${esc(j.tipo)}</span>${j.fechaLanz ? `<span class="chip">Lanzamiento: ${fechaCorta(j.fechaLanz)}</span>` : ''}</div>
-      ${(j.desactualizado || []).length ? `<div class="aviso">Datos desactualizados: ${j.desactualizado.map(x => `<b>${esc(x.fuente)}</b> (último dato bueno: ${x.desde ? fecha(x.desde) : 'nunca'})`).join(', ')}.</div>` : ''}
-      <div class="col3 seccion">
-        <div class="panel"><div class="sub">Mejor precio</div><div class="dato">${dinero(j.precios[0]?.actual)}</div><div class="sub">en ${esc(j.precios[0]?.tiendaNombre)}</div></div>
-        <div class="panel"><div class="sub">Precio de referencia (MSRP)</div><div class="dato">${dinero(j.msrp)}</div><div class="sub">Mínimo histórico: ${dinero(j.minimoHistorico)}</div></div>
-        <div class="panel"><div class="sub">Calificaciones</div>${cal.length ? cal.map(c => `<div style="display:flex;justify-content:space-between;gap:8px;margin-top:6px"><span class="sub">${esc(NOMBRE_FUENTE[c.f] || c.f)}</span><span class="score ${claseScore(c.v)}">${Math.round(c.v)}${c.f === 'steam_usuarios' ? '%' : ''}</span></div>`).join('') : '<div class="sub">Sin datos</div>'}</div>
+      <div class="pila">${j.plataformas.map(p => `<span class="chip">${esc(p)}</span>`).join('')}${j.fechaLanz ? `<span class="chip">${fechaCorta(j.fechaLanz)}</span>` : ''}</div>
+      <div class="desde"><span class="etq">Desde</span><span class="monto">${dinero(mejor.actual)}</span><span class="en">en ${esc(mejor.tiendaNombre)}</span></div>
+      ${j.msrp ? `<div class="ref">Precio de referencia: ${dinero(j.msrp)} · Más bajo que hemos visto: ${dinero(j.minimoHistorico)}</div>` : ''}
+      ${j.desactualizado.length ? `<div class="aviso">Algunos datos pueden estar desactualizados (${j.desactualizado.map(x => esc(x.fuente)).join(', ')}).</div>` : ''}
+      <div class="notas">
+        ${meta != null ? `<div class="nota"><div class="anillo" style="--c:${colorNota(meta)}" data-v="${meta}"><b>${Math.round(meta)}</b></div>
+          <div><div class="titulo-n">Metacritic</div><div class="sub-n">${textoMeta(meta)}</div><div class="sub-n">Nota de la crítica</div></div></div>` : ''}
+        ${steam != null ? `<div class="nota"><div class="anillo" style="--c:${colorNota(steam)}" data-v="${steam}"><b>${Math.round(steam)}<small style="font-size:11px">%</small></b></div>
+          <div><div class="titulo-n">Usuarios de Steam</div><div class="sub-n">${textoSteam(steam)}</div><div class="sub-n">Reseñas positivas</div></div></div>` : ''}
       </div>
     </div>
   </section>
-  <section class="panel seccion"><h2>Precios, de menor a mayor</h2><div class="tabla-scroll"><table>
-    <thead><tr><th>Tienda</th><th>Plataforma</th><th>Formato</th><th class="num">Precio</th><th class="num">Regular</th><th class="num">Desc.</th><th>Obtenido</th><th></th></tr></thead>
-    <tbody>${j.precios.map(p => `<tr><td>${esc(p.tiendaNombre)}${p.dudoso ? ' <span class="chip viejo" title="Emparejamiento dudoso">dudoso</span>' : ''}</td><td>${esc(p.plataforma ?? '')}</td><td>${p.formato === 'fisico' ? 'Físico' : 'Digital'}</td>
-      <td class="num"><b>${dinero(p.actual)}</b></td><td class="num">${p.regular ? dinero(p.regular) : '—'}</td><td class="num">${p.descuento ? '-' + p.descuento + '%' : '—'}</td>
-      <td>${fecha(p.obtenidoEn)}${p.desactualizado ? ' <span class="chip viejo">viejo</span>' : ''}</td><td><a href="${esc(p.url)}" target="_blank" rel="noopener">Ver en tienda</a></td></tr>`).join('')}</tbody></table></div>
-    <p class="sub">Los precios se emparejan por similitud de títulos entre tiendas; los marcados "dudoso" se revisan aparte.</p></section>
-  <section class="col2 seccion">
-    <div class="panel"><h2>Historial de precios</h2><div class="lienzo"><canvas id="hist" aria-label="Gráfico del historial de precios por tienda"></canvas></div></div>
-    <div class="panel"><h2>¿Cuánto dura?</h2>${d ? `<table><tbody>
-      <tr><td>Historia principal</td><td class="num"><b>${d.principal ?? '—'} h</b></td></tr>
-      <tr><td>Historia + extras</td><td class="num"><b>${d.extras ?? '—'} h</b></td></tr>
-      <tr><td>Completista</td><td class="num"><b>${d.completista ?? '—'} h</b></td></tr></tbody></table>
-      <p class="sub">Fuente: ${d.fuente === 'igdb' ? 'IGDB (respaldo de How Long To Beat)' : 'How Long To Beat'} · ${fecha(d.obtenidoEn)}</p>` : '<p class="sub">Sin dato de duración todavía.</p>'}
-      ${j.titulosAlt?.length ? `<h2 style="margin-top:18px">También conocido como</h2><p class="sub">${j.titulosAlt.map(esc).join(' · ')}</p>` : ''}</div>
-  </section>`;
+
+  <h2 class="seccion-t">Dónde comprarlo <small>de menor a mayor precio</small></h2>
+  <section class="ofertas">${j.precios.map((p, i) => `
+    <article class="oferta${i === 0 ? ' mejor' : ''}" style="animation-delay:${i * 70}ms">
+      ${i === 0 ? '<span class="cinta">Mejor precio</span>' : ''}
+      <div class="tienda-o"><span class="mono ${p.tienda}">${LETRA[p.tienda]}</span><b>${esc(p.tiendaNombre)}</b></div>
+      <div class="pildoras">${p.plataforma ? `<span class="pildora">${esc(p.plataforma)}</span>` : ''}<span class="pildora">${p.formato === 'fisico' ? 'Físico' : 'Digital'}</span>${p.dudoso ? '<span class="marca-dudosa">· revisar edición</span>' : ''}</div>
+      <div class="precio-o"><span class="p">${dinero(p.actual)}</span>${p.regular && p.regular > p.actual ? `<s>${dinero(p.regular)}</s>` : ''}${p.descuento ? `<span class="d">-${p.descuento}%</span>` : ''}</div>
+      <a class="ir" href="${esc(p.url)}" target="_blank" rel="noopener">Ver en tienda <span aria-hidden="true">→</span></a>
+    </article>`).join('')}
+  </section>
+
+  ${d ? `<h2 class="seccion-t">¿Cuánto dura?</h2>
+  <section class="duracion">
+    ${[['Historia principal', d.principal], ['Historia + extras', d.extras], ['Completista', d.completista]].map(([n, h]) => `
+      <div class="dura"><div class="sub-n">${n}</div><div class="h">${h != null ? h : '—'} <small>${h != null ? 'horas' : ''}</small></div>
+      <div class="barra-n"><i data-w="${h && maxH ? Math.round(100 * h / maxH) : 0}"></i></div></div>`).join('')}
+  </section>
+  <p class="fuente">Fuente: ${d.fuente === 'igdb' ? 'IGDB' : 'How Long To Beat'}.</p>` : ''}
+
+  <p class="al-final"><a class="discreto" href="/historial.html?id=${j.id}">Historial de precios de este juego</a></p>`;
   armar($('#titulo'));
-  const css = getComputedStyle(document.documentElement);
-  const colores = { steam: css.getPropertyValue('--serie-1').trim(), gog: css.getPropertyValue('--serie-4').trim(), nintendo: css.getPropertyValue('--serie-2').trim(), gamestop: css.getPropertyValue('--serie-3').trim() };
-  const fechas = [...new Set(j.historial.flatMap(h => h.puntos.map(p => p.fecha)))].sort();
-  new Chart($('#hist'), { type: 'line',
-    data: { labels: fechas, datasets: j.historial.map(h => ({ label: h.nombre, data: fechas.map(f => h.puntos.find(p => p.fecha === f)?.precio ?? null),
-      borderColor: colores[h.tienda], backgroundColor: colores[h.tienda], spanGaps: true, stepped: true, pointRadius: 4, borderWidth: 2 })) },
-    options: { maintainAspectRatio: false, plugins: { legend: { labels: { color: css.getPropertyValue('--niebla') } } },
-      scales: { x: { ticks: { color: css.getPropertyValue('--niebla') }, grid: { color: css.getPropertyValue('--borde') } },
-                y: { ticks: { color: css.getPropertyValue('--niebla'), callback: v => '$' + v }, grid: { color: css.getPropertyValue('--borde') } } } } });
+  requestAnimationFrame(() => {
+    document.querySelectorAll('.anillo').forEach(a => {
+      const v = +a.dataset.v; let t = 0;
+      const paso = () => { t = Math.min(v, t + v / 30); a.style.setProperty('--v', t); if (t < v) requestAnimationFrame(paso); };
+      matchMedia('(prefers-reduced-motion: reduce)').matches ? a.style.setProperty('--v', v) : paso();
+    });
+    document.querySelectorAll('.barra-n i').forEach(b => b.style.width = b.dataset.w + '%');
+  });
 } catch (e) { app.innerHTML = '<p class="vacio">No encontramos ese juego.</p>'; console.error(e); }
 </script></body></html>

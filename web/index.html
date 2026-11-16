@@ -1,18 +1,19 @@
-<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=Sora:wght@300;500;700;800&display=swap" rel="stylesheet"><link rel="stylesheet" href="/assets/app.css"><link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 32 32%22%3E%3Ccircle cx=%2216%22 cy=%2216%22 r=%2210%22 fill=%22none%22 stroke=%22%235ce1e6%22 stroke-width=%223%22/%3E%3Ccircle cx=%2216%22 cy=%2216%22 r=%223%22 fill=%22%238b7cf6%22/%3E%3C/svg%3E"><title>Radar de Ofertas</title></head><body>
+<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=Sora:wght@300;500;700;800&display=swap" rel="stylesheet"><link rel="stylesheet" href="/assets/app.css"><link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 32 32%22%3E%3Ccircle cx=%2216%22 cy=%2216%22 r=%2210%22 fill=%22none%22 stroke=%22%235ce1e6%22 stroke-width=%223%22/%3E%3Ccircle cx=%2216%22 cy=%2216%22 r=%223%22 fill=%22%238b7cf6%22/%3E%3C/svg%3E"><title>Cazador de gamers</title></head><body>
 <div class="aurora" aria-hidden="true"></div>
 <header class="barra"><div class="envoltura">
-  <a class="marca" href="/"><span class="punto"></span><span class="txt">Radar de Ofertas</span></a>
-  <nav class="menu"><a href="/" aria-current="page">Ofertas</a><a href="/metricas.html" >Métricas</a></nav>
+  <a class="marca" href="/"><span class="punto"></span><span class="txt">Cazador de gamers</span></a>
+  <nav class="menu"><a href="/" aria-current="page">Juegos</a></nav>
   <button class="tema" type="button" aria-label="Cambiar tema claro u oscuro"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 3a9 9 0 0 0 0 18z" fill="currentColor"/></svg></button>
 </div></header>
 <main class="envoltura">
   <section class="heroe">
     <div class="sello">Última actualización: <b id="actualizado">—</b></div>
-    <h1 id="titulo">El mejor precio de <span class="acento">cada juego</span>, en cada tienda.</h1>
-    <p>Comparamos Steam, GOG, Nintendo eShop y GameStop para más de 600 juegos. Los datos los recoge un pipeline paralelo en C# que corre solo cada 12 horas.</p>
+    <h1 id="titulo">Cazador de <span class="acento">gamers</span></h1>
+    <p class="eslogan">Rastreamos cuatro tiendas para que tu próximo juego te cueste menos.</p>
+    <p class="tiendas-hero"><span>Steam</span><span>GOG</span><span>Nintendo eShop</span><span>GameStop</span></p>
   </section>
   <section class="filtros" aria-label="Filtros">
-    <label>Buscar<input id="q" type="search" placeholder="Zelda, Hades, Persona…"></label>
+    <label>Buscar<input id="q" type="search" placeholder="¿Qué juego andás cazando?"></label>
     <label>Tipo<select id="tipo"><option value="">Todos</option><option value="juego">Juego</option><option value="juego+dlc">Juego + DLC</option><option value="dlc">DLC</option><option value="otro">Otro</option></select></label>
     <label>Plataforma<select id="plataforma"><option value="">Todas</option></select></label>
     <label>Formato<select id="formato"><option value="">Todos</option><option value="digital">Digital</option><option value="fisico">Físico</option></select></label>
@@ -24,7 +25,7 @@
   <section class="rejilla" id="rejilla"></section>
   <button class="mas" id="mas" type="button" hidden>Cargar más</button>
 </main>
-<footer><div class="envoltura">Proyecto académico IC-3101 Arquitectura de Computadoras · TEC San Carlos · II Semestre 2026. Precios en USD tomados de Steam, GOG, Nintendo eShop y GameStop; los enlaces llevan a cada tienda. Sin afiliación con ninguna tienda.</div></footer>
+<footer><div class="envoltura pie"><span><b class="sora">Cazador de gamers</b> · Precios en USD de Steam, GOG, Nintendo eShop y GameStop. No estamos afiliados a ninguna tienda.</span><a class="discreto" href="/metricas.html">Historial y métricas</a></div></footer>
 <script type="module">
 import { $, dinero, fecha, esc, claseScore, catalogo, armar, tilt, tema } from '/assets/app.js';
 tema(); armar($('#titulo')); tilt($('#rejilla'));

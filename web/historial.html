@@ -1,0 +1,34 @@
+<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=Sora:wght@300;500;700;800&display=swap" rel="stylesheet"><link rel="stylesheet" href="/assets/app.css"><link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 32 32%22%3E%3Ccircle cx=%2216%22 cy=%2216%22 r=%2210%22 fill=%22none%22 stroke=%22%235ce1e6%22 stroke-width=%223%22/%3E%3Ccircle cx=%2216%22 cy=%2216%22 r=%223%22 fill=%22%238b7cf6%22/%3E%3C/svg%3E"><title>Historial de precios · Cazador de gamers</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script></head><body>
+<div class="aurora" aria-hidden="true"></div>
+<header class="barra"><div class="envoltura">
+  <a class="marca" href="/"><span class="punto"></span><span class="txt">Cazador de gamers</span></a>
+  <nav class="menu"><a href="/">Juegos</a></nav>
+  <button class="tema" type="button" aria-label="Cambiar tema claro u oscuro"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 3a9 9 0 0 0 0 18z" fill="currentColor"/></svg></button>
+</div></header>
+<main class="envoltura">
+  <section class="heroe"><div class="sello">Historial de precios</div><h1 id="titulo">…</h1></section>
+  <section class="panel"><div class="lienzo"><canvas id="hist" aria-label="Historial de precios por tienda"></canvas></div><p class="sub" id="nota"></p></section>
+  <p class="al-final"><a class="discreto" id="volver" href="/">← Volver al juego</a></p>
+</main>
+<footer><div class="envoltura pie"><span><b class="sora">Cazador de gamers</b> · Precios en USD de Steam, GOG, Nintendo eShop y GameStop. No estamos afiliados a ninguna tienda.</span><a class="discreto" href="/metricas.html">Historial y métricas</a></div></footer>
+<script type="module">
+import { $, dinero, esc, detalle, armar, tema } from '/assets/app.js';
+tema();
+const id = new URLSearchParams(location.search).get('id');
+try {
+  const j = await detalle(id);
+  document.title = 'Historial · ' + j.titulo;
+  $('#titulo').textContent = j.titulo; armar($('#titulo'));
+  $('#volver').href = '/juego.html?id=' + j.id;
+  const css = getComputedStyle(document.documentElement), C = n => css.getPropertyValue(n).trim();
+  const colores = { steam: C('--serie-1'), gog: C('--serie-4'), nintendo: C('--serie-2'), gamestop: C('--serie-3') };
+  const fechas = [...new Set(j.historial.flatMap(h => h.puntos.map(p => p.fecha)))].sort();
+  new Chart($('#hist'), { type: 'line',
+    data: { labels: fechas, datasets: j.historial.map(h => ({ label: h.nombre, data: fechas.map(f => h.puntos.find(p => p.fecha === f)?.precio ?? null),
+      borderColor: colores[h.tienda], backgroundColor: colores[h.tienda], spanGaps: true, stepped: true, pointRadius: 4, borderWidth: 2 })) },
+    options: { maintainAspectRatio: false, plugins: { legend: { labels: { color: C('--niebla') } }, tooltip: { callbacks: { label: c => `${c.dataset.label}: ${dinero(c.raw)}` } } },
+      scales: { x: { ticks: { color: C('--niebla') }, grid: { color: C('--borde') } }, y: { ticks: { color: C('--niebla'), callback: v => '$' + v }, grid: { color: C('--borde') } } } } });
+  $('#nota').textContent = `${fechas.length} día(s) con datos. Cada punto es el precio más bajo de esa tienda ese día.`;
+} catch (e) { $('#titulo').textContent = 'No encontramos ese juego'; console.error(e); }
+</script></body></html>
