@@ -60,6 +60,34 @@ switch (comando)
             log.WriteLine($"  {dom,-28} ok={e.Exitosas} cache={e.DesdeCache} reint={e.Reintentadas} fall={e.Fallidas}");
         break;
     }
+    case "duraciones":
+    {
+        // Solo llena la duración (IGDB) de todos los juegos, sin volver a descargar precios.
+        var igdb = new Radar.Scraping.Fuentes.Igdb(d);
+        if (!igdb.Disponible(false)) { log.WriteLine("Faltan IGDB_CLIENT_ID / IGDB_CLIENT_SECRET."); break; }
+        var juegos = db.CargarJuegos();
+        int ok = 0, sin = 0, fal = 0;
+        var res = new System.Collections.Concurrent.ConcurrentBag<(long id, Duracion du)>();
+        await Parallel.ForEachAsync(juegos, new ParallelOptions { MaxDegreeOfParallelism = 4, CancellationToken = cts.Token }, async (j, t) =>
+        {
+            try { var du = await igdb.DuracionAsync(j.Titulo, t); if (du is null) Interlocked.Increment(ref sin); else { res.Add((j.Id, du)); Interlocked.Increment(ref ok); } }
+            catch (Exception e) { Interlocked.Increment(ref fal); log.WriteLine($"  {j.Titulo}: {e.Message}"); }
+        });
+        var ahora = DateTime.UtcNow.ToString("o");
+        using (var tx = db.Tx())
+        {
+            foreach (var (id, du) in res)
+                db.Exec("INSERT OR REPLACE INTO duracion VALUES($j,$f,$a,$b,$c,$o)", ("$j", id), ("$f", du.Fuente), ("$a", du.PrincipalH), ("$b", du.ExtrasH), ("$c", du.CompletistaH), ("$o", ahora));
+            // Limpieza de valores absurdos que vienen de usuarios de IGDB (p. ej. 5 000 h de completista).
+            db.Exec("UPDATE duracion SET completista_h=NULL WHERE completista_h > 400 OR completista_h > 6*COALESCE(extras_h,principal_h,1e9)");
+            db.Exec("UPDATE duracion SET extras_h=NULL WHERE extras_h > 300 OR (principal_h IS NOT NULL AND extras_h < principal_h)");
+            db.Exec("UPDATE duracion SET principal_h=NULL WHERE principal_h > 200");
+            tx.Commit();
+        }
+        log.WriteLine($"Duraciones: {ok} con dato, {sin} sin dato en IGDB, {fal} fallos");
+        Publicador.Publicar(db, op, log);
+        break;
+    }
     case "publicar":
         Publicador.Publicar(db, op, log);
         break;

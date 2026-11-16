@@ -18,7 +18,7 @@ public sealed class Opciones
         ["www.nintendo.com"] = 2, ["www.gamestop.com"] = 2, ["api.igdb.com"] = 1, ["id.twitch.tv"] = 1, ["howlongtobeat.com"] = 1
     };
     /// <summary>Espera mínima entre solicitudes a un dominio (solo en vivo).</summary>
-    public Dictionary<string, int> IntervaloMinMs { get; set; } = new() { ["store.steampowered.com"] = 1500 };
+    public Dictionary<string, int> IntervaloMinMs { get; set; } = new() { ["store.steampowered.com"] = 1500, ["api.igdb.com"] = 260 };
     public int LimiteDominioReplay { get; set; } = 1024;
     public int TimeoutSeg { get; set; } = 15;
     public int MaxReintentos { get; set; } = 4;

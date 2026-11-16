@@ -11,7 +11,7 @@
     "store.steampowered.com": 3, "catalog.gog.com": 3, "www.metacritic.com": 2,
     "www.nintendo.com": 2, "www.gamestop.com": 2, "api.igdb.com": 1, "id.twitch.tv": 1, "howlongtobeat.com": 1
   },
-  "IntervaloMinMs": { "store.steampowered.com": 1500 },
+  "IntervaloMinMs": { "store.steampowered.com": 1500, "api.igdb.com": 260 },
   "LimiteDominioReplay": 1024,
   "TimeoutSeg": 15,
   "MaxReintentos": 4,
