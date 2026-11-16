@@ -62,6 +62,12 @@ public static class Persistencia
                     ("$j", j.Id), ("$f", fu), ("$o", ahora));
             }
         }
+        // Limpieza de duraciones absurdas o inconsistentes de IGDB (misma regla que el comando "duraciones").
+        db.Exec("UPDATE duracion SET completista_h=NULL WHERE completista_h > 400 OR completista_h > 6*COALESCE(extras_h,principal_h,1e9)");
+        db.Exec("UPDATE duracion SET extras_h=NULL WHERE extras_h > 300 OR (principal_h IS NOT NULL AND extras_h < principal_h)");
+        db.Exec("UPDATE duracion SET principal_h=NULL WHERE principal_h > 200");
+        db.Exec("UPDATE duracion SET principal_h=NULL, completista_h=NULL WHERE completista_h < principal_h");
+        db.Exec("UPDATE duracion SET completista_h=NULL WHERE completista_h < max(coalesce(principal_h,0),coalesce(extras_h,0))");
         foreach (var x in r.Fallos)
             db.Exec("INSERT INTO fallo VALUES($e,$j,$f,$u,$er,$r)", ("$e", ej), ("$j", x.JuegoId), ("$f", x.Fuente), ("$u", x.Url), ("$er", x.Error + (x.Recuperado ? " (recuperado al reintentar)" : "")), ("$r", x.Reintentado ? 1 : 0));
         foreach (var (dom, est) in d.Estadisticas.OrderBy(k => k.Key))
