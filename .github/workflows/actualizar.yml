@@ -28,6 +28,8 @@ jobs:
           IGDB_CLIENT_ID: ${{ secrets.IGDB_CLIENT_ID }}
           IGDB_CLIENT_SECRET: ${{ secrets.IGDB_CLIENT_SECRET }}
         run: dotnet run --project src/Radar.Pipeline -c Release --no-build -- ejecutar --modo par --io 8
+      - name: Empaquetar datos del sitio
+        run: python3 scripts/empaquetar_sitio.py
       - name: Guardar datos (historial de precios y JSON del sitio)
         run: |
           git config user.name "radar-ofertas-bot"

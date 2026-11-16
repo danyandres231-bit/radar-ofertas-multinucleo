@@ -61,3 +61,64 @@ export function tema() {
     try { localStorage.setItem('tema', nuevo); } catch {}
   });
 }
+
+// ---------- Datos del sitio: un solo paquete comprimido (data/sitio.bin = JSON compacto + gzip) ----------
+const TIENDAS = ['steam', 'gog', 'nintendo', 'gamestop'];
+const NOMBRE_TIENDA = { steam: 'Steam', gog: 'GOG', nintendo: 'Nintendo eShop', gamestop: 'GameStop' };
+const PREFIJO = ['https://store.steampowered.com/', 'https://www.gog.com/en/game/', 'https://www.nintendo.com/us/store/products/', 'https://www.gamestop.com/'];
+let _datos;
+async function paquete() {
+  if (_datos) return _datos;
+  const partes = await Promise.all([0, 1, 2].map(async i => {
+    const r = await fetch(`/data/sitio.${i}.bin`, { cache: 'no-cache' });
+    if (!r.ok) throw new Error('sitio.' + i + '.bin ' + r.status);
+    return new Uint8Array(await r.arrayBuffer());
+  }));
+  const todo = new Uint8Array(partes.reduce((n, p) => n + p.length, 0));
+  let o = 0; for (const p of partes) { todo.set(p, o); o += p.length; }
+  const flujo = new Blob([todo]).stream().pipeThrough(new DecompressionStream('gzip'));
+  _datos = JSON.parse(await new Response(flujo).text());
+  return _datos;
+}
+const pct = (a, r) => r > a ? Math.round(100 * (1 - a / r)) : 0;
+function expandir(d, x) {
+  const [id, titulo, img, tipo, fechaLanz, msrp, minimo, meta, steamU, pr, hist, du, desact] = x;
+  const precios = pr.map(([t, actual, regular, fis, pl, u, dud, of, fe, viejo]) => ({
+    tienda: TIENDAS[t], tiendaNombre: NOMBRE_TIENDA[TIENDAS[t]], actual, regular, descuento: pct(actual, regular ?? 0), enOferta: !!of,
+    formato: fis ? 'fisico' : 'digital', plataforma: d.pl[pl] || null, url: u.startsWith('http') ? u : PREFIJO[t] + u, dudoso: !!dud,
+    obtenidoEn: d.fe[fe], desactualizado: !!viejo }));
+  const imagen = img ? (img.startsWith('~') ? 'https://www.metacritic.com/a/img/catalog/provider/' + img.slice(1) : img) : null;
+  return {
+    id, titulo, imagen, tipo, fechaLanz, msrp, minimoHistorico: minimo, precios,
+    calificaciones: [meta != null && { f: 'metacritic', v: meta }, steamU != null && { f: 'steam_usuarios', v: steamU }].filter(Boolean),
+    historial: hist.map(([t, pts]) => ({ tienda: TIENDAS[t], nombre: NOMBRE_TIENDA[TIENDAS[t]], puntos: pts.map(([fecha, precio]) => ({ fecha, precio })) })),
+    duracion: du ? { fuente: du[0], principal: du[1], extras: du[2], completista: du[3], obtenidoEn: du[4] } : null,
+    desactualizado: desact.map(([fuente, desde]) => ({ fuente, desde })),
+    plataformas: [...new Set(precios.map(p => p.plataforma).filter(Boolean))].sort(),
+    metascore: meta, steamUsuarios: steamU
+  };
+}
+export async function catalogo() {
+  const d = await paquete();
+  const juegos = d.j.map(x => {
+    const g = expandir(d, x), m = g.precios[0];
+    return { ...g, mejor: m, tiendas: [...new Set(g.precios.map(p => p.tienda))].sort(), formatos: [...new Set(g.precios.map(p => p.formato))].sort(),
+      descuentoMax: Math.max(...g.precios.map(p => p.descuento)), enOferta: g.precios.some(p => p.enOferta),
+      minimoHistorico: m.actual <= g.minimoHistorico + 0.001, minimoValor: g.minimoHistorico, desactualizado: g.desactualizado.length > 0 };
+  });
+  return { actualizado: d.a, juegos };
+}
+export async function detalle(id) {
+  const d = await paquete();
+  const x = d.j.find(j => String(j[0]) === String(id));
+  if (!x) throw new Error('no existe ' + id);
+  return expandir(d, x);
+}
+export async function metricas() {
+  const m = (await paquete()).m;
+  return { ...m,
+    noPublicados: m.noPublicados.map(([titulo, motivo]) => ({ titulo, motivo, tiendas: [] })),
+    dudosos: m.dudosos.map(([titulo, tienda, tituloTienda, similitud, motivo]) => ({ titulo, tienda, tituloTienda, similitud, motivo })),
+    fallos: m.fallos.map(([titulo, fuente, error]) => ({ titulo, fuente, error })) };
+}
+export async function bench() { const b = (await paquete()).b; if (!b) throw new Error('sin mediciones'); return b; }

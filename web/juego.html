@@ -9,13 +9,13 @@
 <main class="envoltura" id="app"><p class="vacio">Cargando…</p></main>
 <footer><div class="envoltura">Proyecto académico IC-3101 Arquitectura de Computadoras · TEC San Carlos · II Semestre 2026. Precios en USD tomados de Steam, GOG, Nintendo eShop y GameStop; los enlaces llevan a cada tienda. Sin afiliación con ninguna tienda.</div></footer>
 <script type="module">
-import { $, dinero, fecha, fechaCorta, esc, claseScore, json, armar, tema } from '/assets/app.js';
+import { $, dinero, fecha, fechaCorta, esc, claseScore, detalle, armar, tema } from '/assets/app.js';
 tema();
 const id = new URLSearchParams(location.search).get('id');
 const app = $('#app');
 const NOMBRE_FUENTE = { metacritic: 'Metacritic (crítica)', steam_usuarios: 'Reseñas de usuarios de Steam' };
 try {
-  const j = await json(`/data/juego/${encodeURIComponent(id)}.json`);
+  const j = await detalle(id);
   document.title = j.titulo + ' · Radar de Ofertas';
   const cal = j.calificaciones || [];
   const d = j.duracion;
@@ -38,7 +38,7 @@ try {
     <tbody>${j.precios.map(p => `<tr><td>${esc(p.tiendaNombre)}${p.dudoso ? ' <span class="chip viejo" title="Emparejamiento dudoso">dudoso</span>' : ''}</td><td>${esc(p.plataforma ?? '')}</td><td>${p.formato === 'fisico' ? 'Físico' : 'Digital'}</td>
       <td class="num"><b>${dinero(p.actual)}</b></td><td class="num">${p.regular ? dinero(p.regular) : '—'}</td><td class="num">${p.descuento ? '-' + p.descuento + '%' : '—'}</td>
       <td>${fecha(p.obtenidoEn)}${p.desactualizado ? ' <span class="chip viejo">viejo</span>' : ''}</td><td><a href="${esc(p.url)}" target="_blank" rel="noopener">Ver en tienda</a></td></tr>`).join('')}</tbody></table></div>
-    <p class="sub">"Tienda" muestra con qué título aparece el juego en cada sitio (emparejamiento por similitud de títulos).</p></section>
+    <p class="sub">Los precios se emparejan por similitud de títulos entre tiendas; los marcados "dudoso" se revisan aparte.</p></section>
   <section class="col2 seccion">
     <div class="panel"><h2>Historial de precios</h2><div class="lienzo"><canvas id="hist" aria-label="Gráfico del historial de precios por tienda"></canvas></div></div>
     <div class="panel"><h2>¿Cuánto dura?</h2>${d ? `<table><tbody>

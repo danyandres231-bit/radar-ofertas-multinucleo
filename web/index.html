@@ -26,7 +26,7 @@
 </main>
 <footer><div class="envoltura">Proyecto académico IC-3101 Arquitectura de Computadoras · TEC San Carlos · II Semestre 2026. Precios en USD tomados de Steam, GOG, Nintendo eShop y GameStop; los enlaces llevan a cada tienda. Sin afiliación con ninguna tienda.</div></footer>
 <script type="module">
-import { $, dinero, fecha, esc, claseScore, json, armar, tilt, tema } from '/assets/app.js';
+import { $, dinero, fecha, esc, claseScore, catalogo, armar, tilt, tema } from '/assets/app.js';
 tema(); armar($('#titulo')); tilt($('#rejilla'));
 const POR_PAGINA = 36; let datos = [], filtrados = [], mostrados = 0;
 const f = id => $('#' + id);
@@ -58,7 +58,7 @@ function mas() {
   if (!filtrados.length) f('rejilla').innerHTML = '<p class="vacio">Ningún juego coincide con esos filtros.</p>';
 }
 try {
-  const r = await json('/data/juegos.json'); datos = r.juegos;
+  const r = await catalogo(); datos = r.juegos;
   f('actualizado').textContent = fecha(r.actualizado);
   const plats = [...new Set(datos.flatMap(j => j.plataformas))].sort();
   f('plataforma').insertAdjacentHTML('beforeend', plats.map(p => `<option>${esc(p)}</option>`).join(''));

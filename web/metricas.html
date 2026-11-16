@@ -30,7 +30,7 @@
 </main>
 <footer><div class="envoltura">Proyecto académico IC-3101 Arquitectura de Computadoras · TEC San Carlos · II Semestre 2026. Precios en USD tomados de Steam, GOG, Nintendo eShop y GameStop; los enlaces llevan a cada tienda. Sin afiliación con ninguna tienda.</div></footer>
 <script type="module">
-import { $, fecha, esc, json, armar, tema } from '/assets/app.js';
+import { $, fecha, esc, metricas, bench, armar, tema } from '/assets/app.js';
 tema(); armar($('#titulo'));
 const css = getComputedStyle(document.documentElement), C = n => css.getPropertyValue(n).trim();
 Chart.defaults.color = C('--niebla'); Chart.defaults.borderColor = C('--borde'); Chart.defaults.font.family = 'IBM Plex Sans';
@@ -38,7 +38,7 @@ const NOM = { '0_descubrir': '0 · Descubrir', '0_normalizar_candidatos': '0 · 
 const tabla = (cab, filas) => `<table><thead><tr>${cab.map(c => `<th${c.n ? ' class="num"' : ''}>${c.t ?? c}</th>`).join('')}</tr></thead><tbody>${filas.join('')}</tbody></table>`;
 const n2 = v => v == null ? '—' : (+v).toFixed(2), n3 = v => v == null ? '—' : (+v).toFixed(3);
 try {
-  const m = await json('/data/metricas.json'); const u = m.ultima, t = u.tiempos;
+  const m = await metricas(); const u = m.ultima, t = u.tiempos;
   $('#resumen').innerHTML = `
     <div class="panel"><div class="sub">Última ejecución</div><div class="dato">${fecha(u.fin)}</div><div class="sub">modo ${esc(u.modo)} · ${u.workersIo} workers E/S · ${u.workersCpu} de CPU${u.replay ? ' · replay' : ' · en vivo'}</div></div>
     <div class="panel"><div class="sub">Duración total</div><div class="dato">${n2(t.total)} s</div><div class="sub">pipeline ${n2(t.pipeline)} s</div></div>
@@ -48,13 +48,13 @@ try {
     options: { indexAxis: 'y', maintainAspectRatio: false, plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => c.raw.toFixed(2) + ' s' } } }, scales: { x: { title: { display: true, text: 'segundos' } } } } });
   $('#sitios').innerHTML = tabla(['Sitio', { t: 'Exitosas', n: 1 }, { t: 'Reintentadas', n: 1 }, { t: 'Fallidas', n: 1 }],
     m.solicitudes.map(s => `<tr><td>${esc(s.dominio)}</td><td class="num">${s.exitosas}</td><td class="num">${s.reintentadas}</td><td class="num">${s.fallidas}</td></tr>`));
-  $('#noPub').innerHTML = m.noPublicados.length ? tabla(['Juego', 'Tiendas con precio', 'Motivo'], m.noPublicados.slice(0, 300).map(x => `<tr><td>${esc(x.titulo)}</td><td>${esc(x.tiendas.join(', ') || '—')}</td><td>${x.motivo === 'sin_emparejar' ? 'Sin emparejar' : 'Una sola tienda'}</td></tr>`)) : '<p class="sub">Ninguno.</p>';
-  $('#dudosos').innerHTML = m.dudosos.length ? tabla(['Juego', 'Tienda', 'Título en la tienda', { t: 'Similitud', n: 1 }, 'Motivo'], m.dudosos.map(x => `<tr><td>${esc(x.titulo)}</td><td>${esc(x.tienda)}</td><td><a href="${esc(x.url)}" target="_blank" rel="noopener">${esc(x.tituloTienda)}</a></td><td class="num">${n3(x.similitud)}</td><td>${esc((x.motivo || '').replaceAll('_', ' '))}</td></tr>`)) : '<p class="sub">Ninguno.</p>';
+  $('#noPub').innerHTML = m.noPublicados.length ? tabla(['Juego', 'Motivo'], m.noPublicados.slice(0, 300).map(x => `<tr><td>${esc(x.titulo)}</td><td>${x.motivo === 'sin_emparejar' ? 'Sin emparejar' : 'Una sola tienda'}</td></tr>`)) : '<p class="sub">Ninguno.</p>';
+  $('#dudosos').innerHTML = m.dudosos.length ? tabla(['Juego', 'Tienda', 'Título en la tienda', { t: 'Similitud', n: 1 }, 'Motivo'], m.dudosos.map(x => `<tr><td>${esc(x.titulo)}</td><td>${esc(x.tienda)}</td><td>${esc(x.tituloTienda)}</td><td class="num">${n3(x.similitud)}</td><td>${esc((x.motivo || '').replaceAll('_', ' '))}</td></tr>`)) : '<p class="sub">Ninguno.</p>';
   $('#fallos').innerHTML = m.fallos.length ? tabla(['Juego', 'Fuente', 'Error'], m.fallos.map(x => `<tr><td>${esc(x.titulo)}</td><td>${esc(x.fuente)}</td><td>${esc(x.error)}</td></tr>`)) : '<p class="sub">Sin fallos en la última ejecución.</p>';
 } catch (e) { console.error(e); }
 
 try {
-  const b = await json('/data/bench.json'); const f = b.ficha;
+  const b = await bench(); const f = b.ficha;
   $('#ficha').innerHTML = `<h2>Ficha del equipo de medición</h2><div class="pila">
     <span class="chip">${esc(f.procesador)}</span><span class="chip">${f.nucleosFisicos} núcleos físicos</span><span class="chip">${f.nucleosLogicos} lógicos</span>
     <span class="chip">SMT ${f.smt ? 'activo' : 'no'}</span><span class="chip">${esc(f.memoria)} RAM</span><span class="chip">${esc(f.sistemaOperativo)}</span><span class="chip">${esc(f.runtime)}</span></div>`;
@@ -68,7 +68,7 @@ try {
       options: { maintainAspectRatio: false, interaction: { mode: 'index', intersect: false },
         plugins: { tooltip: { callbacks: { label: c => `${c.dataset.label}: ${(+c.raw).toFixed(2)}×` } } },
         scales: { x: { title: { display: true, text: 'workers (p)' } }, y: { type: 'logarithmic', title: { display: true, text: 'speedup (escala log)' } } } } });
-    $(nota).textContent = `Secuencial: ${n2(e.secuencial.mediana)} s (mediana de ${e.secuencial.muestras.length}). Fracción serial estimada (Karp–Flatt, p ≤ núcleos): ${e.fraccionSerialAmdahl ?? '—'}.`;
+    $(nota).textContent = `Secuencial: ${n2(e.secuencial.mediana)} s (mediana de 5 repeticiones). Fracción serial estimada (Karp–Flatt, p ≤ núcleos): ${e.fraccionSerialAmdahl ?? '—'}.`;
   };
   const kDesc = Object.keys(b.etapas).find(k => k.startsWith('descarga_lat100')) || Object.keys(b.etapas).find(k => k.startsWith('descarga'));
   curva('#spDesc', b.etapas[kDesc], '#notaDesc');
