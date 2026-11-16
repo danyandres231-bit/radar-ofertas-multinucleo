@@ -29,7 +29,7 @@ for c in J["juegos"]:
     hist = [[TI.index(h["tienda"]), [[x["fecha"], x["precio"]] for x in h["puntos"]]] for h in d.get("historial", [])]
     juegos.append([c["id"], c["titulo"], img, c["tipo"], c.get("fechaLanz") or "", d.get("msrp"), d["minimoHistorico"],
                    cal.get("metacritic"), cal.get("steam_usuarios"), precios, hist,
-                   [du["fuente"], du.get("principal"), du.get("extras"), du.get("completista"), du.get("obtenidoEn")] if du else None,
+                   [du["fuente"], du.get("principal"), du.get("extras"), du.get("completista"), du.get("obtenidoEn")] if du and any(du.get(k) for k in ("principal", "extras", "completista")) else None,
                    [[x["fuente"], x.get("desde")] for x in d.get("desactualizado", [])]])
 
 if B:
