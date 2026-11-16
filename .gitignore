@@ -489,3 +489,4 @@ data/cache/
 *.db-wal
 data/replay/
 data/bench/*.csv
+igdb.txt
