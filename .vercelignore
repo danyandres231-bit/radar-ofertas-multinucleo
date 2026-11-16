@@ -7,3 +7,5 @@
 *.sln
 README.md
 subir-a-vercel.bat
+.env*
+.vercel/
