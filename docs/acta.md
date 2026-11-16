@@ -8,10 +8,10 @@
 | Integrante | Rol | Responde por |
 |---|---|---|
 | Andrés Daniel Vargas Mejías | Arquitectura y sincronización | Pipeline, colas, límites, ADRs técnicos, contención |
-| _(por definir)_ | Rendimiento y experimentación | Replay, banco de pruebas, barridos, speedup, informe |
-| _(por definir)_ | Datos y producto | Catálogo, fuentes, emparejamiento, sitio, panel, cron |
+| Eyner José Marín Hernández | Rendimiento y experimentación | Replay, banco de pruebas, barridos, speedup, informe |
+| Rafael Arias Méndez | Datos y producto | Catálogo, fuentes, emparejamiento, sitio, panel, cron |
 
-> Por ahora el proyecto lo inicia una sola persona. Cuando se integren los demás, se actualiza esta tabla y se registra en `seguimiento.md`. Todas las personas deben poder explicar cualquier parte.
+> Roles propuestos; el equipo puede cambiarlos y registrarlo en `seguimiento.md`. Todas las personas deben poder explicar cualquier parte.
 
 ## Acuerdos de comunicación
 - Canal principal: grupo de WhatsApp del equipo. Respuesta esperada en menos de 12 h.

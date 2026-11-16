@@ -1,7 +1,7 @@
 # Informe técnico · Radar de Ofertas Multinúcleo
 
 **IC-3101 Arquitectura de Computadoras** · Instituto Tecnológico de Costa Rica, Campus San Carlos · II Semestre 2026
-**Integrantes:** Andrés Daniel Vargas Mejías _(+ compañeros por agregar)_
+**Integrantes:** Andrés Daniel Vargas Mejías, Eyner José Marín Hernández, Rafael Arias Méndez
 **Fecha:** 15/11/2026
 
 ---
