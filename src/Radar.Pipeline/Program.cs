@@ -82,6 +82,10 @@ switch (comando)
             db.Exec("UPDATE duracion SET completista_h=NULL WHERE completista_h > 400 OR completista_h > 6*COALESCE(extras_h,principal_h,1e9)");
             db.Exec("UPDATE duracion SET extras_h=NULL WHERE extras_h > 300 OR (principal_h IS NOT NULL AND extras_h < principal_h)");
             db.Exec("UPDATE duracion SET principal_h=NULL WHERE principal_h > 200");
+            // Completista nunca puede durar menos que la historia (dato inconsistente de IGDB): si choca con la
+            // historia principal no se sabe cuál está mal y se quitan los dos; si solo choca con "extras", se quita completista.
+            db.Exec("UPDATE duracion SET principal_h=NULL, completista_h=NULL WHERE completista_h < principal_h");
+            db.Exec("UPDATE duracion SET completista_h=NULL WHERE completista_h < max(coalesce(principal_h,0),coalesce(extras_h,0))");
             tx.Commit();
         }
         log.WriteLine($"Duraciones: {ok} con dato, {sin} sin dato en IGDB, {fal} fallos");
