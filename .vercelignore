@@ -1,4 +1,9 @@
-src/
-data/
-docs/
+/src/
+/data/
+/docs/
+/scripts/
+/config/
+/.github/
 *.sln
+README.md
+subir-a-vercel.bat
